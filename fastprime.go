@@ -68,7 +68,7 @@ func NewRand()*Rand{
 	
 }
 
-func (rnd *Rand) RandPrime(bits uint16)*big.Int{
+func (rnd *Rand) RandPrime(bits uint16,prob uint8)*big.Int{
 	if bits<2 {
 		panic("cant generate prime less 2 bit")
 	}
@@ -94,11 +94,11 @@ func (rnd *Rand) RandPrime(bits uint16)*big.Int{
 		}
 		bytes[len(bytes)-1] |= 1
 		p.SetBytes(bytes)
-		if probablyPrime(p,64) && p.BitLen()==int(bits){
+		if probablyPrime(p,int(prob)) && p.BitLen()==int(bits){
 			return p
 		}
 		var limit bool
-		q,limit:=rnd.findPrime(p,int(bits))
+		q,limit:=rnd.findPrime(p,int(bits),prob)
 		if limit {
 			continue
 		}
@@ -111,7 +111,7 @@ func (rnd *Rand) RandPrime(bits uint16)*big.Int{
 }
 
 
-func (rnd *Rand) findPrime(p *big.Int,limit int)(*big.Int,bool){
+func (rnd *Rand) findPrime(p *big.Int,limit int,prob uint8)(*big.Int,bool){
 	
 	rnge2:=big.NewInt(0).Mul(rnd.rnge,big.NewInt(2))
 	a:=p.Add(p,big.NewInt(1))
@@ -132,7 +132,7 @@ func (rnd *Rand) findPrime(p *big.Int,limit int)(*big.Int,bool){
 
 		}
 		if isPseudoPrime {
-			if probablyPrime(a,64){
+			if probablyPrime(a,int(prob)){
 				return a,false
 			}
 		}
@@ -152,7 +152,7 @@ func (rnd *Rand) findPrime(p *big.Int,limit int)(*big.Int,bool){
 		go func(){
 			for i:=0; i<len(rnd.skips)&&!found; i++ {
 				a1.Add(a1,rnd.skips[i])
-				if probablyPrime(a1,64) {
+				if probablyPrime(a1,int(prob)) {
 					mut.Lock()
 					found=true
 					q=a1
@@ -165,7 +165,7 @@ func (rnd *Rand) findPrime(p *big.Int,limit int)(*big.Int,bool){
 		go func() {
 			for i:=0; i<len(rnd.skips)&&!found; i++ {
 				a2.Add(a2,rnd.skips[i])
-				if probablyPrime(a2,64) {
+				if probablyPrime(a2,int(prob)) {
 					mut.Lock()
 					found=true
 					q=a2
